@@ -41,9 +41,10 @@ import os
 cors_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://nordpuls.vercel.app",
 ]
 
-# Add production frontend URL from environment
+# Add additional frontend URLs from environment
 frontend_url = os.environ.get("FRONTEND_URL")
 if frontend_url:
     cors_origins.append(frontend_url)
