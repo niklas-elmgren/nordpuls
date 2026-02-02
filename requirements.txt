@@ -1,0 +1,7 @@
+streamlit
+yfinance
+feedparser
+requests
+pandas
+beautifulsoup4
+rich

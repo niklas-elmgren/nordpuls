@@ -1,0 +1,65 @@
+{
+  "watchlist": [
+    {
+      "symbol": "VOLV-B.ST",
+      "name": "Volvo B",
+      "market": "OMX Stockholm"
+    },
+    {
+      "symbol": "ERIC-B.ST",
+      "name": "Ericsson B",
+      "market": "OMX Stockholm"
+    },
+    {
+      "symbol": "HM-B.ST",
+      "name": "H&M B",
+      "market": "OMX Stockholm"
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple",
+      "market": "NASDAQ",
+      "note": "Amerikansk aktie - kongressdata tillgänglig"
+    },
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA",
+      "market": "NASDAQ",
+      "note": "Amerikansk aktie - kongressdata tillgänglig"
+    },
+    {
+      "symbol": "MSFT",
+      "name": "Microsoft",
+      "market": "NASDAQ",
+      "note": "Amerikansk aktie - kongressdata tillgänglig"
+    }
+  ],
+  "news_feeds": {
+    "swedish": [
+      {
+        "name": "Dagens Industri",
+        "url": "https://www.di.se/rss",
+        "category": "business"
+      },
+      {
+        "name": "SVD Näringsliv",
+        "url": "https://www.svd.se/feed/naringsliv.rss",
+        "category": "business"
+      }
+    ],
+    "international": [
+      {
+        "name": "Reuters Business",
+        "url": "https://feeds.reuters.com/reuters/businessNews",
+        "category": "business"
+      }
+    ]
+  },
+  "settings": {
+    "data_retention_days": 90,
+    "sentiment_keywords": {
+      "positive": ["uppgång", "vinst", "rekord", "tillväxt", "stark", "köp", "rally", "surge", "profit", "growth"],
+      "negative": ["nedgång", "förlust", "kris", "varning", "svag", "sälj", "crash", "loss", "decline", "warning"]
+    }
+  }
+}
