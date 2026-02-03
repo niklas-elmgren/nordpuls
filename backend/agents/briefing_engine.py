@@ -8,6 +8,7 @@ Kväll (17:15 CET): Analys inför börsstängning, fokus på riskhantering
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 
 from .research_agent import ResearchAgent
@@ -22,6 +23,11 @@ class BriefingEngine:
         self.config_path = config_path
         with open(config_path, "r", encoding="utf-8") as f:
             self.config = json.load(f)
+
+        # Load all OMX Stockholm stocks
+        omx_path = Path(__file__).parent.parent / "config" / "omx_stockholm.json"
+        with open(omx_path, "r", encoding="utf-8") as f:
+            self.omx_data = json.load(f)
 
     def _get_agent(self) -> ResearchAgent:
         return ResearchAgent(self.config_path)
@@ -89,6 +95,39 @@ class BriefingEngine:
                 f"Nedan följer rekommendationer inför morgondagen."
             )
 
+    def _get_all_stocks(self) -> list:
+        """Get all stocks from OMX Stockholm config."""
+        stocks_config = self.omx_data.get("stocks", {})
+        all_stocks = []
+
+        # Add Swedish stocks (Large + Mid Cap for briefings - most liquid)
+        for stock in stocks_config.get("large_cap", []):
+            all_stocks.append({**stock, "market": "OMX Stockholm"})
+        for stock in stocks_config.get("mid_cap", []):
+            all_stocks.append({**stock, "market": "OMX Stockholm"})
+
+        # Add US watchlist for congress tracking
+        for stock in stocks_config.get("us_watchlist", []):
+            all_stocks.append(stock)
+
+        return all_stocks
+
+    def _analyze_stock(self, agent: ResearchAgent, stock: dict) -> dict:
+        """Analyze a single stock with error handling."""
+        try:
+            return agent.analyze_stock(stock["symbol"], stock["name"])
+        except Exception as e:
+            return {
+                "symbol": stock["symbol"],
+                "name": stock["name"],
+                "stock_data": {"error": str(e)},
+                "signal": {"type": "NEUTRAL", "score": 0, "reasons": [f"Fel: {e}"]},
+                "news_summary": {"sentiment": "no_data", "count": 0, "score": 0},
+                "congress_activity": {},
+                "unusual_activity": [],
+                "recent_headlines": [],
+            }
+
     def generate_briefing(self, briefing_type: str = "morning") -> dict:
         """
         Generate a briefing.
@@ -100,25 +139,36 @@ class BriefingEngine:
             Complete briefing dict
         """
         agent = self._get_agent()
-        watchlist = self.config.get("watchlist", [])
+        all_stocks = self._get_all_stocks()
 
-        # Analyze all stocks
+        print(f"Genererar {briefing_type} briefing för {len(all_stocks)} aktier...")
+
+        # Analyze all stocks in parallel for speed
         analyses = []
-        for stock in watchlist:
-            try:
-                analysis = agent.analyze_stock(stock["symbol"], stock["name"])
-                analyses.append(analysis)
-            except Exception as e:
-                analyses.append({
-                    "symbol": stock["symbol"],
-                    "name": stock["name"],
-                    "stock_data": {"error": str(e)},
-                    "signal": {"type": "NEUTRAL", "score": 0, "reasons": [f"Fel: {e}"]},
-                    "news_summary": {"sentiment": "no_data", "count": 0, "score": 0},
-                    "congress_activity": {},
-                    "unusual_activity": [],
-                    "recent_headlines": [],
-                })
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {
+                executor.submit(self._analyze_stock, agent, stock): stock
+                for stock in all_stocks
+            }
+            for future in as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        analyses.append(result)
+                except Exception as e:
+                    stock = futures[future]
+                    analyses.append({
+                        "symbol": stock["symbol"],
+                        "name": stock["name"],
+                        "stock_data": {"error": str(e)},
+                        "signal": {"type": "NEUTRAL", "score": 0, "reasons": [f"Fel: {e}"]},
+                        "news_summary": {"sentiment": "no_data", "count": 0, "score": 0},
+                        "congress_activity": {},
+                        "unusual_activity": [],
+                        "recent_headlines": [],
+                    })
+
+        print(f"Analyserade {len(analyses)} aktier")
 
         # Separate Swedish and US stocks
         swedish = [a for a in analyses if a["symbol"].endswith(".ST")]
