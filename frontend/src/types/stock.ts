@@ -2,10 +2,13 @@ export interface WatchlistStock {
   symbol: string;
   name: string;
   market: string;
+  cap_size?: string;
   current_price: number;
   change_percent: number;
   volume_vs_avg: number;
   currency: string;
+  high_52w?: number | null;
+  low_52w?: number | null;
   error?: string;
 }
 
