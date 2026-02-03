@@ -10,6 +10,26 @@ export interface BriefingRecommendation {
   congress_signal: string | null;
 }
 
+export interface RocketPick {
+  symbol: string;
+  name: string;
+  morning_price: number;
+  signal_score: number;
+  rocket_score: number;
+  reasons: string[];
+  volume_vs_avg: number;
+  news_sentiment: string;
+  pick_time: string;
+}
+
+export interface RocketFollowup extends RocketPick {
+  current_price: number;
+  day_change_percent: number;
+  status: "TARGET_HIT" | "PROFIT" | "FLAT" | "SMALL_LOSS" | "STOP_LOSS" | "NO_DATA";
+  recommendation: string;
+  message: string;
+}
+
 export interface Briefing {
   type: string;
   generated_at: string;
@@ -28,6 +48,8 @@ export interface Briefing {
     description: string;
     total_trades: number;
   }>;
+  rocket_picks?: RocketPick[];
+  rocket_followup?: RocketFollowup[];
   disclaimer: string;
   error?: string;
 }

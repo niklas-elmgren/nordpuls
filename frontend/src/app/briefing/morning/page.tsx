@@ -3,7 +3,7 @@
 import { useMorningBriefing } from "@/hooks/useBriefing";
 import { BriefingSkeleton } from "@/components/ui/Skeleton";
 import { SignalBadge } from "@/components/stock/SignalBadge";
-import { Sun, Landmark, AlertTriangle, Shield } from "lucide-react";
+import { Sun, Landmark, AlertTriangle, Shield, Rocket } from "lucide-react";
 import {
   cn,
   formatPrice,
@@ -63,6 +63,60 @@ export default function MorningBriefingPage() {
           {briefing.summary}
         </p>
       </div>
+
+      {/* Dagens raketer */}
+      {briefing.rocket_picks && briefing.rocket_picks.length > 0 && (
+        <div className="bg-gradient-to-r from-signal-green/10 to-accent/10 border border-signal-green/30 rounded-lg p-5">
+          <h2 className="text-base font-semibold text-signal-green mb-4 flex items-center gap-2">
+            <Rocket className="w-5 h-5" />
+            Dagens Raketer
+          </h2>
+          <p className="text-xs text-text-secondary mb-4">
+            Aktier med starkast köpsignal - potentiella dagsraketer att bevaka
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {briefing.rocket_picks.map((rocket, i) => (
+              <div
+                key={rocket.symbol}
+                className="bg-bg-primary/50 border border-signal-green/20 rounded-lg p-4"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-xs text-text-tertiary tracking-wider uppercase">
+                      {rocket.symbol}
+                    </p>
+                    <p className="text-sm font-medium text-text-primary">
+                      {rocket.name}
+                    </p>
+                  </div>
+                  <div className="bg-signal-green/20 text-signal-green text-xs font-semibold px-2 py-1 rounded">
+                    RAKET #{i + 1}
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2 mb-3">
+                  <span className="text-lg font-semibold font-mono font-tabular text-text-primary">
+                    {formatPrice(rocket.morning_price, "SEK")}
+                  </span>
+                  <span className="text-xs text-text-muted">
+                    Volym: {rocket.volume_vs_avg?.toFixed(1)}x avg
+                  </span>
+                </div>
+                <ul className="space-y-1">
+                  {rocket.reasons?.slice(0, 3).map((reason, j) => (
+                    <li key={j} className="text-xs text-text-secondary flex items-start gap-2">
+                      <span className="text-signal-green mt-0.5">+</span>
+                      {reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-text-muted mt-4 italic">
+            Följ upp dessa aktier i kvällsbriefet för säljrekommendation
+          </p>
+        </div>
+      )}
 
       {/* Highlights */}
       {briefing.highlights && briefing.highlights.length > 0 && (

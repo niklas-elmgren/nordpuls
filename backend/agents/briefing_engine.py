@@ -29,6 +29,10 @@ class BriefingEngine:
         with open(omx_path, "r", encoding="utf-8") as f:
             self.omx_data = json.load(f)
 
+        # Path for storing daily rocket picks
+        self.rockets_path = Path(__file__).parent.parent / "data" / "daily_rockets.json"
+        self.rockets_path.parent.mkdir(parents=True, exist_ok=True)
+
     def _get_agent(self) -> ResearchAgent:
         return ResearchAgent(self.config_path)
 
@@ -67,6 +71,158 @@ class BriefingEngine:
             return "open"
         else:
             return "closed"
+
+    def _select_rocket_picks(self, analyses: list) -> list:
+        """
+        Välj 1-2 'kursraketer' baserat på starkaste köpsignaler.
+
+        Kriterier:
+        - Signal score >= 2 (stark köpsignal)
+        - Hög volym vs genomsnitt (momentum)
+        - Positivt nyhetssentiment
+        - Svenska aktier prioriteras (handlas under dagen)
+        """
+        # Filtrera svenska aktier med starka signaler
+        candidates = [
+            a for a in analyses
+            if a["symbol"].endswith(".ST")
+            and a["signal"]["score"] >= 1
+            and a["stock_data"].get("current_price", 0) > 0
+        ]
+
+        # Poängsätt kandidater
+        scored = []
+        for a in candidates:
+            score = a["signal"]["score"] * 2  # Bas från signal
+
+            # Bonus för hög volym (momentum)
+            volume_ratio = a["stock_data"].get("volume_vs_avg", 1)
+            if volume_ratio > 1.5:
+                score += 1
+            if volume_ratio > 2.0:
+                score += 1
+
+            # Bonus för positivt nyhetssentiment
+            news_score = a.get("news_summary", {}).get("score", 0)
+            if news_score > 0:
+                score += 1
+
+            # Bonus för kongressköp (om tillgängligt)
+            congress = a.get("congress_activity", {})
+            if congress.get("has_congress_activity") and congress.get("buys", 0) > congress.get("sells", 0):
+                score += 1
+
+            scored.append({
+                "analysis": a,
+                "rocket_score": score
+            })
+
+        # Sortera efter poäng och ta topp 2
+        scored.sort(key=lambda x: x["rocket_score"], reverse=True)
+
+        rockets = []
+        for item in scored[:2]:
+            a = item["analysis"]
+            rockets.append({
+                "symbol": a["symbol"],
+                "name": a["name"],
+                "morning_price": a["stock_data"].get("current_price", 0),
+                "signal_score": a["signal"]["score"],
+                "rocket_score": item["rocket_score"],
+                "reasons": a["signal"]["reasons"][:3],  # Top 3 skäl
+                "volume_vs_avg": a["stock_data"].get("volume_vs_avg", 1),
+                "news_sentiment": a.get("news_summary", {}).get("sentiment", "neutral"),
+                "pick_time": datetime.now().isoformat(),
+            })
+
+        return rockets
+
+    def _save_rocket_picks(self, rockets: list):
+        """Spara dagens raketval för uppföljning på kvällen."""
+        data = {
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "picks": rockets,
+            "generated_at": datetime.now().isoformat()
+        }
+        with open(self.rockets_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    def _load_rocket_picks(self) -> dict:
+        """Ladda morgonens raketval."""
+        if not self.rockets_path.exists():
+            return None
+
+        with open(self.rockets_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Kontrollera att det är från idag
+        if data.get("date") != datetime.now().strftime("%Y-%m-%d"):
+            return None
+
+        return data
+
+    def _evaluate_rocket_performance(self, picks: list, current_analyses: dict) -> list:
+        """
+        Utvärdera hur morgonens raketer har presterat.
+
+        Returns lista med resultat och rekommendationer.
+        """
+        results = []
+
+        for pick in picks:
+            symbol = pick["symbol"]
+            morning_price = pick["morning_price"]
+
+            # Hitta aktuell analys
+            current = current_analyses.get(symbol)
+            if not current:
+                results.append({
+                    **pick,
+                    "status": "NO_DATA",
+                    "recommendation": "OKÄND",
+                    "message": "Kunde inte hämta aktuell data"
+                })
+                continue
+
+            current_price = current["stock_data"].get("current_price", 0)
+            if current_price <= 0 or morning_price <= 0:
+                continue
+
+            # Beräkna dagsförändring
+            day_change = ((current_price - morning_price) / morning_price) * 100
+
+            # Bestäm rekommendation
+            if day_change >= 3.0:
+                recommendation = "SÄLJ - TA HEM VINST"
+                status = "TARGET_HIT"
+                message = f"🎯 Upp {day_change:.1f}% - Ta hem vinsten!"
+            elif day_change >= 1.5:
+                recommendation = "BEHÅLL ELLER SÄLJ HALVA"
+                status = "PROFIT"
+                message = f"📈 Upp {day_change:.1f}% - Bra dag, överväg att sälja halva positionen"
+            elif day_change >= 0:
+                recommendation = "BEHÅLL"
+                status = "FLAT"
+                message = f"➡️ Oförändrad ({day_change:+.1f}%) - Behåll till imorgon"
+            elif day_change >= -2.0:
+                recommendation = "BEHÅLL"
+                status = "SMALL_LOSS"
+                message = f"📉 Ned {day_change:.1f}% - Mindre dipp, behåll"
+            else:
+                recommendation = "SÄLJ - STOPLOSS"
+                status = "STOP_LOSS"
+                message = f"🛑 Ned {day_change:.1f}% - Överväg att ta förlusten"
+
+            results.append({
+                **pick,
+                "current_price": current_price,
+                "day_change_percent": round(day_change, 2),
+                "status": status,
+                "recommendation": recommendation,
+                "message": message
+            })
+
+        return results
 
     def _build_summary(self, analyses: list, briefing_type: str) -> str:
         """Build a human-readable summary."""
@@ -229,6 +385,29 @@ class BriefingEngine:
                     "total_trades": ca.get("total_trades", 0),
                 })
 
+        # === DAGENS RAKETER ===
+        rocket_picks = []
+        rocket_followup = []
+
+        if briefing_type == "morning":
+            # Välj och spara dagens raketer
+            rocket_picks = self._select_rocket_picks(all_sorted)
+            if rocket_picks:
+                self._save_rocket_picks(rocket_picks)
+                print(f"Valde {len(rocket_picks)} raketer: {[r['symbol'] for r in rocket_picks]}")
+
+        elif briefing_type == "evening":
+            # Följ upp morgonens raketer
+            morning_data = self._load_rocket_picks()
+            if morning_data and morning_data.get("picks"):
+                # Skapa lookup för aktuella analyser
+                analyses_lookup = {a["symbol"]: a for a in all_sorted}
+                rocket_followup = self._evaluate_rocket_performance(
+                    morning_data["picks"],
+                    analyses_lookup
+                )
+                print(f"Följde upp {len(rocket_followup)} raketer")
+
         return {
             "type": briefing_type,
             "generated_at": datetime.now().isoformat(),
@@ -237,6 +416,8 @@ class BriefingEngine:
             "highlights": highlights,
             "recommendations": recommendations,
             "congress_notable": congress_notable,
+            "rocket_picks": rocket_picks,  # Morgonens raketval
+            "rocket_followup": rocket_followup,  # Kvällens uppföljning
             "disclaimer": (
                 "OBS: Detta är inte finansiell rådgivning. Informationen är baserad på "
                 "automatiserad analys och ska inte användas som enda underlag för "

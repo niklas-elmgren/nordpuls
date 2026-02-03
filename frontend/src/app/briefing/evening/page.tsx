@@ -3,7 +3,7 @@
 import { useEveningBriefing } from "@/hooks/useBriefing";
 import { BriefingSkeleton } from "@/components/ui/Skeleton";
 import { SignalBadge } from "@/components/stock/SignalBadge";
-import { Moon, Landmark, AlertTriangle, Shield } from "lucide-react";
+import { Moon, Landmark, AlertTriangle, Shield, Rocket, TrendingUp, TrendingDown, Target } from "lucide-react";
 import {
   cn,
   formatPrice,
@@ -63,6 +63,82 @@ export default function EveningBriefingPage() {
           {briefing.summary}
         </p>
       </div>
+
+      {/* Raket-uppföljning */}
+      {briefing.rocket_followup && briefing.rocket_followup.length > 0 && (
+        <div className="bg-gradient-to-r from-accent/10 to-signal-amber/10 border border-accent/30 rounded-lg p-5">
+          <h2 className="text-base font-semibold text-accent mb-4 flex items-center gap-2">
+            <Rocket className="w-5 h-5" />
+            Raket-uppföljning
+          </h2>
+          <p className="text-xs text-text-secondary mb-4">
+            Så gick morgonens raketval - rekommendation inför stängning
+          </p>
+          <div className="space-y-4">
+            {briefing.rocket_followup.map((rocket) => {
+              const isProfit = (rocket.day_change_percent || 0) >= 0;
+              const StatusIcon = rocket.status === "TARGET_HIT" ? Target : isProfit ? TrendingUp : TrendingDown;
+              const statusColor = rocket.status === "TARGET_HIT" ? "text-signal-green" :
+                rocket.status === "STOP_LOSS" ? "text-signal-red" :
+                isProfit ? "text-signal-green" : "text-signal-red";
+
+              return (
+                <div
+                  key={rocket.symbol}
+                  className={cn(
+                    "bg-bg-primary/50 border rounded-lg p-4",
+                    rocket.status === "TARGET_HIT" && "border-signal-green/40",
+                    rocket.status === "STOP_LOSS" && "border-signal-red/40",
+                    !["TARGET_HIT", "STOP_LOSS"].includes(rocket.status) && "border-border-subtle"
+                  )}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-xs text-text-tertiary tracking-wider uppercase">
+                        {rocket.symbol}
+                      </p>
+                      <p className="text-sm font-medium text-text-primary">
+                        {rocket.name}
+                      </p>
+                    </div>
+                    <div className={cn("flex items-center gap-1 text-sm font-semibold", statusColor)}>
+                      <StatusIcon className="w-4 h-4" />
+                      {rocket.day_change_percent !== undefined && (
+                        <span>{rocket.day_change_percent >= 0 ? "+" : ""}{rocket.day_change_percent.toFixed(1)}%</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-baseline gap-4 mb-3 text-sm">
+                    <div>
+                      <span className="text-text-muted">Morgon: </span>
+                      <span className="font-mono font-tabular text-text-secondary">
+                        {formatPrice(rocket.morning_price, "SEK")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted">Nu: </span>
+                      <span className="font-mono font-tabular text-text-primary font-medium">
+                        {formatPrice(rocket.current_price, "SEK")}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={cn(
+                    "rounded-md p-3 text-sm",
+                    rocket.status === "TARGET_HIT" && "bg-signal-green/10",
+                    rocket.status === "STOP_LOSS" && "bg-signal-red/10",
+                    !["TARGET_HIT", "STOP_LOSS"].includes(rocket.status) && "bg-bg-tertiary"
+                  )}>
+                    <p className="font-medium mb-1">{rocket.recommendation}</p>
+                    <p className="text-xs text-text-secondary">{rocket.message}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Highlights */}
       {briefing.highlights && briefing.highlights.length > 0 && (
