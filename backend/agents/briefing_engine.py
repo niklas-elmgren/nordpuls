@@ -402,6 +402,10 @@ class BriefingEngine:
         for stock in stocks_config.get("mid_cap", []):
             all_stocks.append({**stock, "market": "OMX Stockholm"})
 
+        # Add First North stocks
+        for stock in stocks_config.get("first_north", []):
+            all_stocks.append({**stock, "market": "First North"})
+
         # Add US watchlist for congress tracking
         for stock in stocks_config.get("us_watchlist", []):
             all_stocks.append(stock)

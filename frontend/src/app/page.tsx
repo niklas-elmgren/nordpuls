@@ -20,6 +20,7 @@ const CAP_LABELS: Record<string, string> = {
   large: "Large Cap",
   mid: "Mid Cap",
   small: "Small Cap",
+  first_north: "First North",
   us: "US Market",
 };
 

@@ -89,6 +89,10 @@ def get_all_stocks(
         for stock in stocks_config.get("small_cap", []):
             all_stocks.append({**stock, "cap_size": "small", "market": "OMX Stockholm"})
 
+    if cap is None or cap == "first_north":
+        for stock in stocks_config.get("first_north", []):
+            all_stocks.append({**stock, "cap_size": "first_north", "market": "First North"})
+
     if cap is None or cap == "us":
         for stock in stocks_config.get("us_watchlist", []):
             all_stocks.append({**stock, "cap_size": "us"})
@@ -210,6 +214,7 @@ def get_cap_sizes():
             {"id": "large", "name": "Large Cap", "count": len(stocks_config.get("large_cap", []))},
             {"id": "mid", "name": "Mid Cap", "count": len(stocks_config.get("mid_cap", []))},
             {"id": "small", "name": "Small Cap", "count": len(stocks_config.get("small_cap", []))},
+            {"id": "first_north", "name": "First North", "count": len(stocks_config.get("first_north", []))},
             {"id": "us", "name": "US Market", "count": len(stocks_config.get("us_watchlist", []))},
         ]
     }

@@ -160,6 +160,22 @@
       {"symbol": "VOLCAR-B.ST", "name": "Volvo Cars B"},
       {"symbol": "XVIVO.ST", "name": "Xvivo Perfusion"}
     ],
+    "first_north": [
+      {"symbol": "CRNO-B.ST", "name": "Cereno Scientific B"},
+      {"symbol": "STAR-B.ST", "name": "Starbreeze B"},
+      {"symbol": "XSPRAY.ST", "name": "Xspray Pharma"},
+      {"symbol": "LIPUM.ST", "name": "Lipum"},
+      {"symbol": "SPRINT.ST", "name": "Sprint Bioscience"},
+      {"symbol": "LIDDS.ST", "name": "LIDDS"},
+      {"symbol": "GUARD.ST", "name": "Guard Therapeutics"},
+      {"symbol": "BOOZT.ST", "name": "Boozt"},
+      {"symbol": "CINT.ST", "name": "Cint Group"},
+      {"symbol": "EG7.ST", "name": "Enad Global 7"},
+      {"symbol": "VPLAY-B.ST", "name": "Viaplay Group B"},
+      {"symbol": "ENRO.ST", "name": "Eniro Group"},
+      {"symbol": "CAG.ST", "name": "CAG Group"},
+      {"symbol": "SOLT.ST", "name": "SolTech Energy"}
+    ],
     "us_watchlist": [
       {"symbol": "AAPL", "name": "Apple", "market": "NASDAQ"},
       {"symbol": "NVDA", "name": "NVIDIA", "market": "NASDAQ"},
