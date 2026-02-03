@@ -4,7 +4,7 @@ Briefing API routes.
 
 from fastapi import APIRouter
 
-from services.scheduler import get_briefing, get_briefing_history
+from services.scheduler import get_briefing, get_briefing_history, get_rockets_history
 
 router = APIRouter()
 
@@ -35,3 +35,14 @@ def get_latest_briefing():
 def get_history(limit: int = 10):
     """Get past briefings."""
     return {"briefings": get_briefing_history(limit)}
+
+
+@router.get("/rockets/history")
+def get_rockets_history_endpoint(days: int = 30):
+    """
+    Get rocket picks history with performance statistics.
+
+    Returns history of daily rocket picks and their outcomes,
+    plus aggregated stats like win rate and average return.
+    """
+    return get_rockets_history(days)

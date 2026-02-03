@@ -8,6 +8,7 @@ import {
   Moon,
   Landmark,
   TrendingUp,
+  Rocket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -16,6 +17,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/briefing/morning", label: "Morgonbrief", icon: Sun },
   { href: "/briefing/evening", label: "Kvällsbrief", icon: Moon },
+  { href: "/rockets", label: "Raket-historik", icon: Rocket },
   { href: "/congress", label: "Kongresshandel", icon: Landmark },
 ];
 

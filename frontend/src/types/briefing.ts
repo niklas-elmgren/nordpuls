@@ -53,3 +53,42 @@ export interface Briefing {
   disclaimer: string;
   error?: string;
 }
+
+export interface RocketHistoryEntry {
+  symbol: string;
+  name: string;
+  morning_price: number;
+  evening_price: number;
+  change_percent: number;
+  status: string;
+  recommendation: string;
+}
+
+export interface RocketDayHistory {
+  date: string;
+  rockets: RocketHistoryEntry[];
+  summary: {
+    total_picks: number;
+    winners: number;
+    losers: number;
+    total_return_percent: number;
+    avg_return_percent: number;
+  };
+}
+
+export interface RocketsHistoryStats {
+  total_days: number;
+  total_picks: number;
+  total_winners: number;
+  total_losers: number;
+  win_rate: number;
+  avg_return: number;
+  total_return: number;
+  best_pick: RocketHistoryEntry & { date: string } | null;
+  worst_pick: RocketHistoryEntry & { date: string } | null;
+}
+
+export interface RocketsHistory {
+  history: RocketDayHistory[];
+  stats: RocketsHistoryStats;
+}

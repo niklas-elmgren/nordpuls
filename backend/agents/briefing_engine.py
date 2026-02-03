@@ -33,6 +33,9 @@ class BriefingEngine:
         self.rockets_path = Path(__file__).parent.parent / "data" / "daily_rockets.json"
         self.rockets_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Path for rocket history
+        self.rockets_history_path = Path(__file__).parent.parent / "data" / "rockets_history.json"
+
     def _get_agent(self) -> ResearchAgent:
         return ResearchAgent(self.config_path)
 
@@ -160,6 +163,143 @@ class BriefingEngine:
             return None
 
         return data
+
+    def _load_rockets_history(self) -> list:
+        """Ladda rakethistorik."""
+        if not self.rockets_history_path.exists():
+            return []
+
+        with open(self.rockets_history_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _save_rockets_history(self, history: list):
+        """Spara rakethistorik."""
+        with open(self.rockets_history_path, "w", encoding="utf-8") as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+
+    def _add_to_history(self, rocket_results: list):
+        """Lägg till dagens raketresultat i historiken."""
+        if not rocket_results:
+            return
+
+        history = self._load_rockets_history()
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        # Kolla om vi redan har data för idag
+        existing_idx = next((i for i, h in enumerate(history) if h["date"] == today), None)
+
+        day_entry = {
+            "date": today,
+            "rockets": [],
+            "summary": {
+                "total_picks": len(rocket_results),
+                "winners": 0,
+                "losers": 0,
+                "total_return_percent": 0,
+            }
+        }
+
+        total_return = 0
+        for r in rocket_results:
+            change = r.get("day_change_percent", 0)
+            if change >= 0:
+                day_entry["summary"]["winners"] += 1
+            else:
+                day_entry["summary"]["losers"] += 1
+            total_return += change
+
+            day_entry["rockets"].append({
+                "symbol": r["symbol"],
+                "name": r["name"],
+                "morning_price": r["morning_price"],
+                "evening_price": r.get("current_price", 0),
+                "change_percent": change,
+                "status": r.get("status", "UNKNOWN"),
+                "recommendation": r.get("recommendation", ""),
+            })
+
+        day_entry["summary"]["total_return_percent"] = round(total_return, 2)
+        day_entry["summary"]["avg_return_percent"] = round(total_return / len(rocket_results), 2) if rocket_results else 0
+
+        if existing_idx is not None:
+            history[existing_idx] = day_entry
+        else:
+            history.append(day_entry)
+
+        # Sortera efter datum (nyast först) och behåll max 90 dagar
+        history.sort(key=lambda x: x["date"], reverse=True)
+        history = history[:90]
+
+        self._save_rockets_history(history)
+        print(f"Sparade raketresultat för {today} i historiken")
+
+    def get_rockets_history(self, days: int = 30) -> dict:
+        """
+        Hämta rakethistorik med sammanfattande statistik.
+
+        Args:
+            days: Antal dagar att hämta
+
+        Returns:
+            Dict med historik och statistik
+        """
+        history = self._load_rockets_history()[:days]
+
+        if not history:
+            return {
+                "history": [],
+                "stats": {
+                    "total_picks": 0,
+                    "total_winners": 0,
+                    "total_losers": 0,
+                    "win_rate": 0,
+                    "avg_return": 0,
+                    "best_pick": None,
+                    "worst_pick": None,
+                }
+            }
+
+        # Beräkna övergripande statistik
+        total_picks = 0
+        total_winners = 0
+        total_losers = 0
+        all_returns = []
+        best_pick = None
+        worst_pick = None
+
+        for day in history:
+            for rocket in day.get("rockets", []):
+                total_picks += 1
+                change = rocket.get("change_percent", 0)
+                all_returns.append(change)
+
+                if change >= 0:
+                    total_winners += 1
+                else:
+                    total_losers += 1
+
+                if best_pick is None or change > best_pick["change_percent"]:
+                    best_pick = {**rocket, "date": day["date"]}
+                if worst_pick is None or change < worst_pick["change_percent"]:
+                    worst_pick = {**rocket, "date": day["date"]}
+
+        avg_return = sum(all_returns) / len(all_returns) if all_returns else 0
+        win_rate = (total_winners / total_picks * 100) if total_picks > 0 else 0
+
+        return {
+            "history": history,
+            "stats": {
+                "total_days": len(history),
+                "total_picks": total_picks,
+                "total_winners": total_winners,
+                "total_losers": total_losers,
+                "win_rate": round(win_rate, 1),
+                "avg_return": round(avg_return, 2),
+                "total_return": round(sum(all_returns), 2),
+                "best_pick": best_pick,
+                "worst_pick": worst_pick,
+            }
+        }
 
     def _evaluate_rocket_performance(self, picks: list, current_analyses: dict) -> list:
         """
@@ -407,6 +547,9 @@ class BriefingEngine:
                     analyses_lookup
                 )
                 print(f"Följde upp {len(rocket_followup)} raketer")
+
+                # Spara till historik
+                self._add_to_history(rocket_followup)
 
         return {
             "type": briefing_type,

@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { fetchAPI } from "@/lib/api";
-import type { Briefing } from "@/types/briefing";
+import type { Briefing, RocketsHistory } from "@/types/briefing";
 
 const fetcher = <T>(path: string) => fetchAPI<T>(path);
 
@@ -22,4 +22,12 @@ export function useLatestBriefing() {
   return useSWR<Briefing>("/api/briefings/latest", fetcher, {
     refreshInterval: 300_000,
   });
+}
+
+export function useRocketsHistory(days: number = 30) {
+  return useSWR<RocketsHistory>(
+    `/api/briefings/rockets/history?days=${days}`,
+    fetcher,
+    { refreshInterval: 300_000 }
+  );
 }

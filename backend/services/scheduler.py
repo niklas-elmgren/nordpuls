@@ -71,6 +71,13 @@ def get_briefing_history(limit: int = 10) -> list:
     return _briefing_store["history"][:limit]
 
 
+def get_rockets_history(days: int = 30) -> dict:
+    """Get rocket picks history with stats."""
+    if _engine:
+        return _engine.get_rockets_history(days)
+    return {"history": [], "stats": {}}
+
+
 def setup_scheduler():
     """Initialize and start the scheduler."""
     global _scheduler, _engine
