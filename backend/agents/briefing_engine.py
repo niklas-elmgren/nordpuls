@@ -286,6 +286,7 @@ class BriefingEngine:
             day_entry["rockets"].append({
                 "symbol": r["symbol"],
                 "name": r["name"],
+                "position": len(day_entry["rockets"]) + 1,  # 1 or 2
                 "morning_price": r["morning_price"],
                 "evening_price": r.get("current_price", 0),
                 "change_percent": change,
@@ -373,6 +374,141 @@ class BriefingEngine:
                 "total_return": round(sum(all_returns), 2),
                 "best_pick": best_pick,
                 "worst_pick": worst_pick,
+            }
+        }
+
+    def get_investment_simulation(self, days: int = 30) -> dict:
+        """
+        Beräkna investeringssimulering för raketval.
+
+        Visar hur mycket man hade tjänat med 1000 kr och 10000 kr
+        per raket dag för dag.
+
+        Args:
+            days: Antal dagar att simulera
+
+        Returns:
+            Dict med simuleringsdata för varje raketposition
+        """
+        history = self._load_rockets_history()[:days]
+
+        if not history:
+            return {
+                "rocket_1": {"trades": [], "totals": {}},
+                "rocket_2": {"trades": [], "totals": {}},
+                "combined": {"totals": {}}
+            }
+
+        # Sortera historik äldst först för korrekt kumulativ beräkning
+        history_sorted = sorted(history, key=lambda x: x["date"])
+
+        # Initiera för varje position
+        rocket_1_trades = []
+        rocket_2_trades = []
+
+        # Kumulativa värden (börja med investeringsbeloppen)
+        r1_cumulative_1000 = 1000.0
+        r1_cumulative_10000 = 10000.0
+        r2_cumulative_1000 = 1000.0
+        r2_cumulative_10000 = 10000.0
+
+        for day in history_sorted:
+            rockets = day.get("rockets", [])
+
+            # Raket #1 (första i listan)
+            if len(rockets) >= 1:
+                r = rockets[0]
+                change_pct = r.get("change_percent", 0)
+                change_factor = 1 + (change_pct / 100)
+
+                # Beräkna dagens resultat
+                profit_1000 = r1_cumulative_1000 * (change_pct / 100)
+                profit_10000 = r1_cumulative_10000 * (change_pct / 100)
+
+                # Uppdatera kumulativt värde
+                r1_cumulative_1000 *= change_factor
+                r1_cumulative_10000 *= change_factor
+
+                rocket_1_trades.append({
+                    "date": day["date"],
+                    "symbol": r["symbol"],
+                    "name": r["name"],
+                    "morning_price": r.get("morning_price", 0),
+                    "evening_price": r.get("evening_price", 0),
+                    "change_percent": change_pct,
+                    "profit_1000": round(profit_1000, 2),
+                    "profit_10000": round(profit_10000, 2),
+                    "cumulative_1000": round(r1_cumulative_1000, 2),
+                    "cumulative_10000": round(r1_cumulative_10000, 2),
+                })
+
+            # Raket #2 (andra i listan)
+            if len(rockets) >= 2:
+                r = rockets[1]
+                change_pct = r.get("change_percent", 0)
+                change_factor = 1 + (change_pct / 100)
+
+                profit_1000 = r2_cumulative_1000 * (change_pct / 100)
+                profit_10000 = r2_cumulative_10000 * (change_pct / 100)
+
+                r2_cumulative_1000 *= change_factor
+                r2_cumulative_10000 *= change_factor
+
+                rocket_2_trades.append({
+                    "date": day["date"],
+                    "symbol": r["symbol"],
+                    "name": r["name"],
+                    "morning_price": r.get("morning_price", 0),
+                    "evening_price": r.get("evening_price", 0),
+                    "change_percent": change_pct,
+                    "profit_1000": round(profit_1000, 2),
+                    "profit_10000": round(profit_10000, 2),
+                    "cumulative_1000": round(r2_cumulative_1000, 2),
+                    "cumulative_10000": round(r2_cumulative_10000, 2),
+                })
+
+        # Beräkna totaler
+        r1_total_return_pct = ((r1_cumulative_1000 - 1000) / 1000) * 100 if rocket_1_trades else 0
+        r2_total_return_pct = ((r2_cumulative_1000 - 1000) / 1000) * 100 if rocket_2_trades else 0
+
+        return {
+            "rocket_1": {
+                "trades": rocket_1_trades,
+                "totals": {
+                    "start_1000": 1000,
+                    "start_10000": 10000,
+                    "end_1000": round(r1_cumulative_1000, 2),
+                    "end_10000": round(r1_cumulative_10000, 2),
+                    "profit_1000": round(r1_cumulative_1000 - 1000, 2),
+                    "profit_10000": round(r1_cumulative_10000 - 10000, 2),
+                    "return_percent": round(r1_total_return_pct, 2),
+                    "trade_count": len(rocket_1_trades),
+                }
+            },
+            "rocket_2": {
+                "trades": rocket_2_trades,
+                "totals": {
+                    "start_1000": 1000,
+                    "start_10000": 10000,
+                    "end_1000": round(r2_cumulative_1000, 2),
+                    "end_10000": round(r2_cumulative_10000, 2),
+                    "profit_1000": round(r2_cumulative_1000 - 1000, 2),
+                    "profit_10000": round(r2_cumulative_10000 - 10000, 2),
+                    "return_percent": round(r2_total_return_pct, 2),
+                    "trade_count": len(rocket_2_trades),
+                }
+            },
+            "combined": {
+                "totals": {
+                    "start_1000": 2000,  # 1000 per raket
+                    "start_10000": 20000,
+                    "end_1000": round(r1_cumulative_1000 + r2_cumulative_1000, 2),
+                    "end_10000": round(r1_cumulative_10000 + r2_cumulative_10000, 2),
+                    "profit_1000": round((r1_cumulative_1000 - 1000) + (r2_cumulative_1000 - 1000), 2),
+                    "profit_10000": round((r1_cumulative_10000 - 10000) + (r2_cumulative_10000 - 10000), 2),
+                    "return_percent": round(((r1_total_return_pct + r2_total_return_pct) / 2), 2),
+                    "total_trades": len(rocket_1_trades) + len(rocket_2_trades),
+                }
             }
         }
 

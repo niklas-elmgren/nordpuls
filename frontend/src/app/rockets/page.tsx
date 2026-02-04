@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Calendar,
   BarChart3,
+  Calculator,
 } from "lucide-react";
 import { cn, formatPrice, formatChange, getChangeColor } from "@/lib/utils";
 import Link from "next/link";
@@ -256,7 +257,19 @@ export default function RocketsHistoryPage() {
       )}
 
       {/* Link back to briefings */}
-      <div className="grid md:grid-cols-2 gap-4 pt-4">
+      <div className="grid md:grid-cols-3 gap-4 pt-4">
+        <Link
+          href="/rockets/simulator"
+          className="bg-gradient-to-r from-accent/10 to-signal-green/10 border border-accent/20 rounded-lg p-4 hover:border-accent/40 transition-colors"
+        >
+          <p className="text-sm font-medium text-text-primary flex items-center gap-2">
+            <Calculator className="w-4 h-4 text-accent" />
+            Simulator
+          </p>
+          <p className="text-xs text-text-secondary">
+            Se vad du hade tjänat
+          </p>
+        </Link>
         <Link
           href="/briefing/morning"
           className="bg-bg-secondary border border-border-subtle rounded-lg p-4 hover:border-border-default transition-colors"

@@ -78,6 +78,17 @@ def get_rockets_history(days: int = 30) -> dict:
     return {"history": [], "stats": {}}
 
 
+def get_investment_simulation(days: int = 30) -> dict:
+    """Get investment simulation data for rockets."""
+    if _engine:
+        return _engine.get_investment_simulation(days)
+    return {
+        "rocket_1": {"trades": [], "totals": {}},
+        "rocket_2": {"trades": [], "totals": {}},
+        "combined": {"totals": {}}
+    }
+
+
 def setup_scheduler():
     """Initialize and start the scheduler."""
     global _scheduler, _engine

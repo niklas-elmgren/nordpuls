@@ -4,7 +4,7 @@ Briefing API routes.
 
 from fastapi import APIRouter
 
-from services.scheduler import get_briefing, get_briefing_history, get_rockets_history
+from services.scheduler import get_briefing, get_briefing_history, get_rockets_history, get_investment_simulation
 
 router = APIRouter()
 
@@ -46,6 +46,20 @@ def get_rockets_history_endpoint(days: int = 30):
     plus aggregated stats like win rate and average return.
     """
     return get_rockets_history(days)
+
+
+@router.get("/rockets/simulation")
+def get_rockets_simulation_endpoint(days: int = 30):
+    """
+    Get investment simulation for rockets.
+
+    Shows what you would have earned if you invested 1000 kr
+    or 10000 kr on each rocket pick (buy at open, sell at close).
+
+    Returns data for rocket #1 and rocket #2 separately,
+    with day-by-day trades and cumulative totals.
+    """
+    return get_investment_simulation(days)
 
 
 @router.post("/regenerate/{briefing_type}")

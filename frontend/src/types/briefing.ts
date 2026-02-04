@@ -105,3 +105,52 @@ export interface RocketsHistory {
   history: RocketDayHistory[];
   stats: RocketsHistoryStats;
 }
+
+// Investment Simulation Types
+export interface SimulationTrade {
+  date: string;
+  symbol: string;
+  name: string;
+  morning_price: number;
+  evening_price: number;
+  change_percent: number;
+  profit_1000: number;
+  profit_10000: number;
+  cumulative_1000: number;
+  cumulative_10000: number;
+}
+
+export interface SimulationTotals {
+  start_1000: number;
+  start_10000: number;
+  end_1000: number;
+  end_10000: number;
+  profit_1000: number;
+  profit_10000: number;
+  return_percent: number;
+  trade_count: number;
+}
+
+export interface RocketSimulation {
+  trades: SimulationTrade[];
+  totals: SimulationTotals;
+}
+
+export interface CombinedTotals {
+  start_1000: number;
+  start_10000: number;
+  end_1000: number;
+  end_10000: number;
+  profit_1000: number;
+  profit_10000: number;
+  return_percent: number;
+  total_trades: number;
+}
+
+export interface InvestmentSimulation {
+  rocket_1: RocketSimulation;
+  rocket_2: RocketSimulation;
+  combined: {
+    totals: CombinedTotals;
+  };
+}
