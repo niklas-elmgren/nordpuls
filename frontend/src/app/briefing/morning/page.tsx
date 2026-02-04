@@ -3,7 +3,7 @@
 import { useMorningBriefing } from "@/hooks/useBriefing";
 import { BriefingSkeleton } from "@/components/ui/Skeleton";
 import { SignalBadge } from "@/components/stock/SignalBadge";
-import { Sun, Landmark, AlertTriangle, Shield, Rocket } from "lucide-react";
+import { Sun, Landmark, AlertTriangle, Shield, Rocket, Target, TrendingUp, TrendingDown, Activity } from "lucide-react";
 import {
   cn,
   formatPrice,
@@ -64,57 +64,132 @@ export default function MorningBriefingPage() {
         </p>
       </div>
 
-      {/* Dagens raketer */}
+      {/* Dagens Trades - Daytrading picks */}
       {briefing.rocket_picks && briefing.rocket_picks.length > 0 && (
-        <div className="bg-gradient-to-r from-signal-green/10 to-accent/10 border border-signal-green/30 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-signal-green mb-4 flex items-center gap-2">
-            <Rocket className="w-5 h-5" />
-            Dagens Raketer
-          </h2>
-          <p className="text-xs text-text-secondary mb-4">
-            Aktier med starkast köpsignal - potentiella dagsraketer att bevaka
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Rocket className="w-5 h-5 text-signal-green" />
+            <h2 className="text-lg font-semibold text-text-primary">
+              Dagens Trades
+            </h2>
+          </div>
+          <p className="text-sm text-text-secondary -mt-2">
+            Köp vid öppning, sälj vid stängning. Följ stoploss!
           </p>
+
           <div className="grid gap-4 md:grid-cols-2">
             {briefing.rocket_picks.map((rocket, i) => (
               <div
                 key={rocket.symbol}
-                className="bg-bg-primary/50 border border-signal-green/20 rounded-lg p-4"
+                className="bg-gradient-to-br from-signal-green/5 to-bg-secondary border border-signal-green/30 rounded-xl p-5 space-y-4"
               >
-                <div className="flex items-start justify-between mb-2">
+                {/* Header */}
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs text-text-tertiary tracking-wider uppercase">
-                      {rocket.symbol}
-                    </p>
-                    <p className="text-sm font-medium text-text-primary">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-signal-green text-bg-primary text-xs font-bold px-2 py-0.5 rounded">
+                        TRADE #{i + 1}
+                      </span>
+                      {rocket.trend === "up" ? (
+                        <TrendingUp className="w-4 h-4 text-signal-green" />
+                      ) : (
+                        <TrendingDown className="w-4 h-4 text-signal-red" />
+                      )}
+                    </div>
+                    <p className="text-lg font-semibold text-text-primary mt-1">
                       {rocket.name}
                     </p>
+                    <p className="text-xs text-text-muted">{rocket.symbol}</p>
                   </div>
-                  <div className="bg-signal-green/20 text-signal-green text-xs font-semibold px-2 py-1 rounded">
-                    RAKET #{i + 1}
+                  {rocket.rsi && (
+                    <div className="text-right">
+                      <p className="text-xs text-text-muted">RSI</p>
+                      <p className={cn(
+                        "text-lg font-mono font-semibold",
+                        rocket.rsi < 30 ? "text-signal-green" :
+                        rocket.rsi > 70 ? "text-signal-red" : "text-text-primary"
+                      )}>
+                        {rocket.rsi.toFixed(0)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Price levels */}
+                <div className="grid grid-cols-3 gap-3 bg-bg-primary/50 rounded-lg p-3">
+                  <div className="text-center">
+                    <p className="text-xs text-text-muted mb-1">Entry</p>
+                    <p className="text-base font-mono font-semibold text-text-primary">
+                      {rocket.entry_price?.toFixed(2) || rocket.morning_price?.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-text-muted">kr</p>
+                  </div>
+                  <div className="text-center border-x border-border-subtle">
+                    <p className="text-xs text-signal-red mb-1">Stoploss</p>
+                    <p className="text-base font-mono font-semibold text-signal-red">
+                      {rocket.stoploss?.toFixed(2) || "—"}
+                    </p>
+                    <p className="text-xs text-signal-red">
+                      {rocket.stoploss_pct?.toFixed(1) || "-4"}%
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-signal-green mb-1">Target</p>
+                    <p className="text-base font-mono font-semibold text-signal-green">
+                      {rocket.target?.toFixed(2) || "—"}
+                    </p>
+                    <p className="text-xs text-signal-green">
+                      +{rocket.target_pct?.toFixed(1) || "5"}%
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-baseline gap-2 mb-3">
-                  <span className="text-lg font-semibold font-mono font-tabular text-text-primary">
-                    {formatPrice(rocket.morning_price, "SEK")}
-                  </span>
-                  <span className="text-xs text-text-muted">
-                    Volym: {rocket.volume_vs_avg?.toFixed(1)}x avg
-                  </span>
+
+                {/* Technical signals */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-text-secondary flex items-center gap-1">
+                    <Activity className="w-3 h-3" /> Teknisk analys
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {rocket.tech_signals?.slice(0, 3).map((signal, j) => (
+                      <span
+                        key={j}
+                        className="text-xs bg-bg-tertiary text-text-secondary px-2 py-1 rounded"
+                      >
+                        {signal}
+                      </span>
+                    ))}
+                    {rocket.volume_spike && rocket.volume_spike > 1.2 && (
+                      <span className="text-xs bg-signal-amber/20 text-signal-amber px-2 py-1 rounded">
+                        Volym: {rocket.volume_spike.toFixed(1)}x
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <ul className="space-y-1">
-                  {rocket.reasons?.slice(0, 3).map((reason, j) => (
-                    <li key={j} className="text-xs text-text-secondary flex items-start gap-2">
-                      <span className="text-signal-green mt-0.5">+</span>
-                      {reason}
-                    </li>
-                  ))}
-                </ul>
+
+                {/* Reasons */}
+                {rocket.reasons && rocket.reasons.length > 0 && (
+                  <div className="border-t border-border-subtle pt-3">
+                    <ul className="space-y-1">
+                      {rocket.reasons.slice(0, 2).map((reason, j) => (
+                        <li key={j} className="text-xs text-text-secondary flex items-start gap-2">
+                          <span className="text-signal-green mt-0.5">•</span>
+                          {reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-          <p className="text-xs text-text-muted mt-4 italic">
-            Följ upp dessa aktier i kvällsbriefet för säljrekommendation
-          </p>
+
+          <div className="bg-signal-amber/10 border border-signal-amber/30 rounded-lg p-3 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-signal-amber shrink-0 mt-0.5" />
+            <p className="text-xs text-text-secondary">
+              <strong className="text-signal-amber">Viktigt:</strong> Sälj ALLTID vid stoploss om kursen går emot dig.
+              Följ upp i kvällsbriefet för säljrekommendation.
+            </p>
+          </div>
         </div>
       )}
 

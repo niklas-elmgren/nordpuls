@@ -14,10 +14,23 @@ export interface RocketPick {
   symbol: string;
   name: string;
   morning_price: number;
+  // Daytrading levels
+  entry_price?: number;
+  stoploss?: number;
+  stoploss_pct?: number;
+  target?: number;
+  target_pct?: number;
+  // Technical indicators
+  rsi?: number;
+  support?: number;
+  resistance?: number;
+  volume_spike?: number;
+  trend?: "up" | "down" | "neutral";
+  tech_signals?: string[];
+  // Scoring
   signal_score: number;
   rocket_score: number;
   reasons: string[];
-  volume_vs_avg: number;
   news_sentiment: string;
   pick_time: string;
 }

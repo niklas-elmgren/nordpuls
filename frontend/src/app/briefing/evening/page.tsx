@@ -3,7 +3,7 @@
 import { useEveningBriefing } from "@/hooks/useBriefing";
 import { BriefingSkeleton } from "@/components/ui/Skeleton";
 import { SignalBadge } from "@/components/stock/SignalBadge";
-import { Moon, Landmark, AlertTriangle, Shield, Rocket, TrendingUp, TrendingDown, Target } from "lucide-react";
+import { Moon, Landmark, AlertTriangle, Shield, Rocket, TrendingUp, TrendingDown, Target, CheckCircle, XCircle, DollarSign } from "lucide-react";
 import {
   cn,
   formatPrice,
@@ -64,74 +64,131 @@ export default function EveningBriefingPage() {
         </p>
       </div>
 
-      {/* Raket-uppföljning */}
+      {/* Dagens Resultat - Trade Followup */}
       {briefing.rocket_followup && briefing.rocket_followup.length > 0 && (
-        <div className="bg-gradient-to-r from-accent/10 to-signal-amber/10 border border-accent/30 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-accent mb-4 flex items-center gap-2">
-            <Rocket className="w-5 h-5" />
-            Raket-uppföljning
-          </h2>
-          <p className="text-xs text-text-secondary mb-4">
-            Så gick morgonens raketval - rekommendation inför stängning
-          </p>
-          <div className="space-y-4">
+        <div className="space-y-4">
+          {/* Summary stats */}
+          {(() => {
+            const total = briefing.rocket_followup.length;
+            const winners = briefing.rocket_followup.filter(r => (r.day_change_percent || 0) >= 0).length;
+            const totalReturn = briefing.rocket_followup.reduce((sum, r) => sum + (r.day_change_percent || 0), 0);
+            const avgReturn = totalReturn / total;
+
+            return (
+              <div className="bg-gradient-to-r from-bg-secondary to-bg-tertiary border border-border-subtle rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-accent" />
+                    Dagens Resultat
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    {totalReturn >= 0 ? (
+                      <CheckCircle className="w-5 h-5 text-signal-green" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-signal-red" />
+                    )}
+                    <span className={cn(
+                      "text-2xl font-bold font-mono",
+                      totalReturn >= 0 ? "text-signal-green" : "text-signal-red"
+                    )}>
+                      {totalReturn >= 0 ? "+" : ""}{totalReturn.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-text-primary">{winners}/{total}</p>
+                    <p className="text-xs text-text-muted">Vinnare</p>
+                  </div>
+                  <div>
+                    <p className={cn(
+                      "text-2xl font-bold font-mono",
+                      avgReturn >= 0 ? "text-signal-green" : "text-signal-red"
+                    )}>
+                      {avgReturn >= 0 ? "+" : ""}{avgReturn.toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-text-muted">Snitt/trade</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-text-primary">
+                      {Math.round((winners / total) * 100)}%
+                    </p>
+                    <p className="text-xs text-text-muted">Win rate</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Individual trades */}
+          <div className="space-y-3">
             {briefing.rocket_followup.map((rocket) => {
               const isProfit = (rocket.day_change_percent || 0) >= 0;
-              const StatusIcon = rocket.status === "TARGET_HIT" ? Target : isProfit ? TrendingUp : TrendingDown;
-              const statusColor = rocket.status === "TARGET_HIT" ? "text-signal-green" :
-                rocket.status === "STOP_LOSS" ? "text-signal-red" :
-                isProfit ? "text-signal-green" : "text-signal-red";
+              const isTargetHit = rocket.status === "TARGET_HIT";
+              const isStopLoss = rocket.status === "STOP_LOSS";
 
               return (
                 <div
                   key={rocket.symbol}
                   className={cn(
-                    "bg-bg-primary/50 border rounded-lg p-4",
-                    rocket.status === "TARGET_HIT" && "border-signal-green/40",
-                    rocket.status === "STOP_LOSS" && "border-signal-red/40",
-                    !["TARGET_HIT", "STOP_LOSS"].includes(rocket.status) && "border-border-subtle"
+                    "border rounded-xl p-4 transition-all",
+                    isTargetHit && "bg-signal-green/5 border-signal-green/40",
+                    isStopLoss && "bg-signal-red/5 border-signal-red/40",
+                    !isTargetHit && !isStopLoss && isProfit && "bg-signal-green/5 border-signal-green/20",
+                    !isTargetHit && !isStopLoss && !isProfit && "bg-signal-red/5 border-signal-red/20"
                   )}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-xs text-text-tertiary tracking-wider uppercase">
-                        {rocket.symbol}
-                      </p>
-                      <p className="text-sm font-medium text-text-primary">
-                        {rocket.name}
-                      </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center",
+                        isProfit ? "bg-signal-green/20" : "bg-signal-red/20"
+                      )}>
+                        {isTargetHit ? (
+                          <Target className="w-5 h-5 text-signal-green" />
+                        ) : isProfit ? (
+                          <TrendingUp className="w-5 h-5 text-signal-green" />
+                        ) : (
+                          <TrendingDown className="w-5 h-5 text-signal-red" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-text-primary">{rocket.name}</p>
+                        <p className="text-xs text-text-muted">{rocket.symbol}</p>
+                      </div>
                     </div>
-                    <div className={cn("flex items-center gap-1 text-sm font-semibold", statusColor)}>
-                      <StatusIcon className="w-4 h-4" />
-                      {rocket.day_change_percent !== undefined && (
-                        <span>{rocket.day_change_percent >= 0 ? "+" : ""}{rocket.day_change_percent.toFixed(1)}%</span>
-                      )}
+
+                    <div className="text-right">
+                      <p className={cn(
+                        "text-xl font-bold font-mono",
+                        isProfit ? "text-signal-green" : "text-signal-red"
+                      )}>
+                        {(rocket.day_change_percent || 0) >= 0 ? "+" : ""}
+                        {(rocket.day_change_percent || 0).toFixed(1)}%
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        {formatPrice(rocket.morning_price, "SEK")} → {formatPrice(rocket.current_price, "SEK")}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex items-baseline gap-4 mb-3 text-sm">
-                    <div>
-                      <span className="text-text-muted">Morgon: </span>
-                      <span className="font-mono font-tabular text-text-secondary">
-                        {formatPrice(rocket.morning_price, "SEK")}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-text-muted">Nu: </span>
-                      <span className="font-mono font-tabular text-text-primary font-medium">
-                        {formatPrice(rocket.current_price, "SEK")}
-                      </span>
-                    </div>
-                  </div>
-
+                  {/* Recommendation */}
                   <div className={cn(
-                    "rounded-md p-3 text-sm",
-                    rocket.status === "TARGET_HIT" && "bg-signal-green/10",
-                    rocket.status === "STOP_LOSS" && "bg-signal-red/10",
-                    !["TARGET_HIT", "STOP_LOSS"].includes(rocket.status) && "bg-bg-tertiary"
+                    "mt-3 rounded-lg p-3",
+                    isTargetHit && "bg-signal-green/10",
+                    isStopLoss && "bg-signal-red/10",
+                    !isTargetHit && !isStopLoss && "bg-bg-tertiary"
                   )}>
-                    <p className="font-medium mb-1">{rocket.recommendation}</p>
-                    <p className="text-xs text-text-secondary">{rocket.message}</p>
+                    <p className={cn(
+                      "text-sm font-semibold",
+                      isTargetHit && "text-signal-green",
+                      isStopLoss && "text-signal-red",
+                      !isTargetHit && !isStopLoss && "text-text-primary"
+                    )}>
+                      {rocket.recommendation}
+                    </p>
+                    <p className="text-xs text-text-secondary mt-1">{rocket.message}</p>
                   </div>
                 </div>
               );

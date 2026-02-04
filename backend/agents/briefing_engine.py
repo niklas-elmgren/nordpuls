@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 
 from .research_agent import ResearchAgent
+from .stock_data import StockDataFetcher
 
 
 class BriefingEngine:
@@ -77,47 +78,83 @@ class BriefingEngine:
 
     def _select_rocket_picks(self, analyses: list) -> list:
         """
-        Välj 1-2 'kursraketer' baserat på starkaste köpsignaler.
+        Välj 2 'kursraketer' för daytrading baserat på teknisk analys.
 
         Kriterier:
-        - Signal score >= 2 (stark köpsignal)
-        - Hög volym vs genomsnitt (momentum)
-        - Positivt nyhetssentiment
-        - Svenska aktier prioriteras (handlas under dagen)
+        - Positiv signal score
+        - Tekniska indikatorer (RSI, volym, trend)
+        - Entry/stoploss/target beräknas automatiskt
         """
-        # Filtrera svenska aktier med starka signaler
+        stock_fetcher = StockDataFetcher()
+
+        # Filtrera svenska aktier med positiva signaler
         candidates = [
             a for a in analyses
             if a["symbol"].endswith(".ST")
-            and a["signal"]["score"] >= 1
+            and a["signal"]["score"] >= 0
             and a["stock_data"].get("current_price", 0) > 0
         ]
 
-        # Poängsätt kandidater
+        # Poängsätt kandidater med teknisk analys
         scored = []
         for a in candidates:
+            symbol = a["symbol"]
             score = a["signal"]["score"] * 2  # Bas från signal
 
-            # Bonus för hög volym (momentum)
-            volume_ratio = a["stock_data"].get("volume_vs_avg", 1)
-            if volume_ratio > 1.5:
+            # Hämta teknisk analys
+            ta = stock_fetcher.get_technical_analysis(symbol)
+
+            if "error" in ta:
+                continue
+
+            # === Teknisk poängsättning ===
+
+            # RSI - överssålt är bra för köp
+            rsi = ta.get("rsi", 50)
+            if rsi < 35:
+                score += 3  # Stark köpsignal
+            elif rsi < 45:
                 score += 1
-            if volume_ratio > 2.0:
+            elif rsi > 70:
+                score -= 2  # Överköpt, undvik
+
+            # Volymspike - momentum
+            vol_spike = ta.get("volume_spike", 1)
+            if vol_spike > 2.0:
+                score += 2
+            elif vol_spike > 1.5:
                 score += 1
+
+            # Trend - med trenden är bättre
+            if ta.get("trend") == "up":
+                score += 1
+
+            # Risk/reward - bra setup
+            target_pct = ta.get("target_pct", 0)
+            stoploss_pct = abs(ta.get("stoploss_pct", -4))
+            if target_pct > 0 and stoploss_pct > 0:
+                rr_ratio = target_pct / stoploss_pct
+                if rr_ratio >= 2:
+                    score += 1
 
             # Bonus för positivt nyhetssentiment
             news_score = a.get("news_summary", {}).get("score", 0)
             if news_score > 0:
                 score += 1
 
-            # Bonus för kongressköp (om tillgängligt)
+            # Bonus för kongressköp
             congress = a.get("congress_activity", {})
             if congress.get("has_congress_activity") and congress.get("buys", 0) > congress.get("sells", 0):
                 score += 1
 
+            # Samla tekniska signaler
+            tech_signals = ta.get("signals", [])
+
             scored.append({
                 "analysis": a,
-                "rocket_score": score
+                "technical": ta,
+                "rocket_score": score,
+                "tech_signals": tech_signals
             })
 
         # Sortera efter poäng och ta topp 2
@@ -126,14 +163,29 @@ class BriefingEngine:
         rockets = []
         for item in scored[:2]:
             a = item["analysis"]
+            ta = item["technical"]
+
             rockets.append({
                 "symbol": a["symbol"],
                 "name": a["name"],
-                "morning_price": a["stock_data"].get("current_price", 0),
+                # Priser
+                "morning_price": ta.get("current_price", a["stock_data"].get("current_price", 0)),
+                "entry_price": ta.get("entry_price", 0),
+                "stoploss": ta.get("stoploss", 0),
+                "stoploss_pct": ta.get("stoploss_pct", -4),
+                "target": ta.get("target", 0),
+                "target_pct": ta.get("target_pct", 5),
+                # Tekniska indikatorer
+                "rsi": ta.get("rsi", 50),
+                "support": ta.get("support", 0),
+                "resistance": ta.get("resistance", 0),
+                "volume_spike": ta.get("volume_spike", 1),
+                "trend": ta.get("trend", "neutral"),
+                # Signaler och skäl
                 "signal_score": a["signal"]["score"],
                 "rocket_score": item["rocket_score"],
-                "reasons": a["signal"]["reasons"][:3],  # Top 3 skäl
-                "volume_vs_avg": a["stock_data"].get("volume_vs_avg", 1),
+                "reasons": a["signal"]["reasons"][:2],
+                "tech_signals": item["tech_signals"][:3],
                 "news_sentiment": a.get("news_summary", {}).get("sentiment", "neutral"),
                 "pick_time": datetime.now().isoformat(),
             })
