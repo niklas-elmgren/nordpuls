@@ -46,3 +46,33 @@ def get_rockets_history_endpoint(days: int = 30):
     plus aggregated stats like win rate and average return.
     """
     return get_rockets_history(days)
+
+
+@router.post("/regenerate/{briefing_type}")
+def regenerate_briefing(briefing_type: str):
+    """
+    Force regenerate a briefing (morning or evening).
+    Use this to get fresh data without waiting for scheduled time.
+    """
+    if briefing_type not in ["morning", "evening"]:
+        return {"error": "Invalid briefing type. Use 'morning' or 'evening'"}
+
+    from services.scheduler import _engine, _briefing_store
+
+    if not _engine:
+        return {"error": "Briefing engine not initialized"}
+
+    try:
+        briefing = _engine.generate_briefing(briefing_type)
+        _briefing_store[briefing_type] = briefing
+        _briefing_store["history"].insert(0, briefing)
+        _briefing_store["history"] = _briefing_store["history"][:20]
+
+        return {
+            "success": True,
+            "message": f"{briefing_type} briefing regenerated",
+            "rocket_picks_count": len(briefing.get("rocket_picks", [])),
+            "recommendations_count": len(briefing.get("recommendations", []))
+        }
+    except Exception as e:
+        return {"error": str(e)}
