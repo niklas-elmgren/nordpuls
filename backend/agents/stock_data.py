@@ -95,24 +95,42 @@ class StockDataFetcher:
         """
         try:
             ticker = yf.Ticker(symbol)
-            hist = ticker.history(period="1mo")
+            # Använd 3 månader för att säkerställa tillräckligt med data
+            hist = ticker.history(period="3mo")
 
-            if len(hist) < 14:
-                return {"error": "För lite data för teknisk analys"}
+            if hist.empty or len(hist) < 20:
+                return {"error": f"För lite data för {symbol} ({len(hist)} rader)"}
 
-            close = hist['Close']
-            high = hist['High']
-            low = hist['Low']
-            volume = hist['Volume']
-            current_price = close.iloc[-1]
+            close = hist['Close'].dropna()
+            high = hist['High'].dropna()
+            low = hist['Low'].dropna()
+            volume = hist['Volume'].dropna()
+
+            if len(close) < 20:
+                return {"error": f"För lite prisdata för {symbol}"}
+
+            current_price = float(close.iloc[-1])
 
             # === RSI (14 perioder) ===
             delta = close.diff()
-            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss
+            gain = delta.where(delta > 0, 0).rolling(window=14, min_periods=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14, min_periods=14).mean()
+
+            # Undvik division med noll
+            rs = gain / loss.replace(0, 0.0001)
             rsi = 100 - (100 / (1 + rs))
+
+            # Hämta senaste RSI-värdet, hantera NaN
             current_rsi = rsi.iloc[-1]
+            if pd.isna(current_rsi):
+                # Fallback: beräkna enklare RSI på senaste 14 dagarna
+                recent = close.tail(15).diff().dropna()
+                gains = recent[recent > 0].sum()
+                losses = abs(recent[recent < 0].sum())
+                if losses > 0:
+                    current_rsi = 100 - (100 / (1 + gains / losses))
+                else:
+                    current_rsi = 70  # Default om ingen förlust
 
             # === Stöd och Motstånd (senaste 20 dagar) ===
             recent_high = high.tail(20).max()
@@ -131,29 +149,32 @@ class StockDataFetcher:
                     support_levels.append(low.iloc[i])
 
             # Närmaste motstånd över current price
-            resistance = min([r for r in resistance_levels if r > current_price], default=recent_high)
+            resistance = float(min([r for r in resistance_levels if r > current_price], default=recent_high))
             # Närmaste stöd under current price
-            support = max([s for s in support_levels if s < current_price], default=recent_low)
+            support = float(max([s for s in support_levels if s < current_price], default=recent_low))
 
             # === Volymanalys ===
-            avg_volume = volume.tail(20).mean()
-            current_volume = volume.iloc[-1]
-            volume_spike = current_volume / avg_volume if avg_volume > 0 else 1
+            avg_volume = float(volume.tail(20).mean())
+            current_volume = float(volume.iloc[-1])
+            volume_spike = current_volume / avg_volume if avg_volume > 0 else 1.0
 
             # === ATR (Average True Range) för volatilitet ===
             tr1 = high - low
             tr2 = abs(high - close.shift())
             tr3 = abs(low - close.shift())
             tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-            atr = tr.rolling(window=14).mean().iloc[-1]
+            atr = float(tr.rolling(window=14).mean().iloc[-1])
+
+            # Fallback om ATR är NaN
+            if pd.isna(atr) or atr <= 0:
+                atr = current_price * 0.02  # 2% som fallback
 
             # === Entry, Stoploss, Target för daytrading ===
-            # Entry: Aktuell kurs (eller lite under vid pullback)
             entry_price = round(current_price, 2)
 
             # Stoploss: 2x ATR under entry, eller strax under support
             atr_stop = current_price - (2 * atr)
-            support_stop = support * 0.99  # 1% under support
+            support_stop = float(support) * 0.99
             stoploss = round(max(atr_stop, support_stop), 2)
 
             # Target: 3x risk (risk/reward 1:3) eller motstånd
