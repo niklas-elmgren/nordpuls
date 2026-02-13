@@ -19,11 +19,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from routers import stocks, news, congress, briefings, climate
 from services.scheduler import setup_scheduler, shutdown_scheduler
+from services.db import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
+    init_db()
     setup_scheduler()
     yield
     shutdown_scheduler()

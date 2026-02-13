@@ -7,3 +7,4 @@ pandas
 beautifulsoup4
 apscheduler
 pydantic
+psycopg2-binary

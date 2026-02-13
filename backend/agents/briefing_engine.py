@@ -13,6 +13,7 @@ import json
 
 from .research_agent import ResearchAgent
 from .stock_data import StockDataFetcher
+from services.db import save_rocket_picks, load_rocket_picks, save_history_day, load_rockets_history
 
 
 class BriefingEngine:
@@ -29,13 +30,6 @@ class BriefingEngine:
         omx_path = Path(__file__).parent.parent / "config" / "omx_stockholm.json"
         with open(omx_path, "r", encoding="utf-8") as f:
             self.omx_data = json.load(f)
-
-        # Path for storing daily rocket picks
-        self.rockets_path = Path(__file__).parent.parent / "data" / "daily_rockets.json"
-        self.rockets_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Path for rocket history
-        self.rockets_history_path = Path(__file__).parent.parent / "data" / "rockets_history.json"
 
     def _get_agent(self) -> ResearchAgent:
         return ResearchAgent(self.config_path)
@@ -222,46 +216,22 @@ class BriefingEngine:
             "picks": rockets,
             "generated_at": datetime.now().isoformat()
         }
-        with open(self.rockets_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        save_rocket_picks(data)
 
     def _load_rocket_picks(self) -> dict:
         """Ladda morgonens raketval."""
-        if not self.rockets_path.exists():
-            return None
-
-        with open(self.rockets_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        # Kontrollera att det är från idag
-        if data.get("date") != datetime.now().strftime("%Y-%m-%d"):
-            return None
-
-        return data
+        return load_rocket_picks()
 
     def _load_rockets_history(self) -> list:
         """Ladda rakethistorik."""
-        if not self.rockets_history_path.exists():
-            return []
-
-        with open(self.rockets_history_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-
-    def _save_rockets_history(self, history: list):
-        """Spara rakethistorik."""
-        with open(self.rockets_history_path, "w", encoding="utf-8") as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        return load_rockets_history()
 
     def _add_to_history(self, rocket_results: list):
         """Lägg till dagens raketresultat i historiken."""
         if not rocket_results:
             return
 
-        history = self._load_rockets_history()
         today = datetime.now().strftime("%Y-%m-%d")
-
-        # Kolla om vi redan har data för idag
-        existing_idx = next((i for i, h in enumerate(history) if h["date"] == today), None)
 
         day_entry = {
             "date": today,
@@ -297,16 +267,7 @@ class BriefingEngine:
         day_entry["summary"]["total_return_percent"] = round(total_return, 2)
         day_entry["summary"]["avg_return_percent"] = round(total_return / len(rocket_results), 2) if rocket_results else 0
 
-        if existing_idx is not None:
-            history[existing_idx] = day_entry
-        else:
-            history.append(day_entry)
-
-        # Sortera efter datum (nyast först) och behåll max 90 dagar
-        history.sort(key=lambda x: x["date"], reverse=True)
-        history = history[:90]
-
-        self._save_rockets_history(history)
+        save_history_day(day_entry)
         print(f"Sparade raketresultat för {today} i historiken")
 
     def get_rockets_history(self, days: int = 30) -> dict:
