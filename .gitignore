@@ -19,7 +19,6 @@ ENV/
 *.db
 *.sqlite
 output/*.md
-data/*.json
 
 # OS
 .DS_Store

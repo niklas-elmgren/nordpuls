@@ -1,0 +1,60 @@
+{
+  "date": "2026-02-12",
+  "picks": [
+    {
+      "symbol": "STAR-B.ST",
+      "name": "Starbreeze B",
+      "morning_price": 0.09,
+      "entry_price": 0.09,
+      "stoploss": 0.09,
+      "stoploss_pct": -3.4,
+      "target": 0.1,
+      "target_pct": 7.3,
+      "rsi": 30.7,
+      "support": 0.09,
+      "resistance": 0.1,
+      "volume_spike": 0.51,
+      "trend": "down",
+      "signal_score": 2,
+      "rocket_score": 9,
+      "reasons": [
+        "Positiv kursrörelse (+2.6%)",
+        "Positivt nyhetssentiment"
+      ],
+      "tech_signals": [
+        "Under 20-dagars MA (nedtrend)"
+      ],
+      "news_sentiment": "positive",
+      "pick_time": "2026-02-12T16:16:23.470437"
+    },
+    {
+      "symbol": "NIBE-B.ST",
+      "name": "NIBE Industrier B",
+      "morning_price": 40.09,
+      "entry_price": 40.09,
+      "stoploss": 37.81,
+      "stoploss_pct": -5.7,
+      "target": 40.58,
+      "target_pct": 1.2,
+      "rsi": 74.0,
+      "support": 36.2,
+      "resistance": 40.99,
+      "volume_spike": 2.34,
+      "trend": "up",
+      "signal_score": 2,
+      "rocket_score": 6,
+      "reasons": [
+        "Positiv kursrörelse (+8.9%)",
+        "Ovanligt hög volym (2.1x)"
+      ],
+      "tech_signals": [
+        "RSI överköpt (>70) - varning",
+        "Volymspike: 2.3x genomsnitt",
+        "Över 20-dagars MA (upptrend)"
+      ],
+      "news_sentiment": "positive",
+      "pick_time": "2026-02-12T16:16:23.470451"
+    }
+  ],
+  "generated_at": "2026-02-12T16:16:23.470510"
+}

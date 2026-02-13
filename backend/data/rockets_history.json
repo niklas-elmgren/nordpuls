@@ -1,0 +1,34 @@
+[
+  {
+    "date": "2026-02-12",
+    "rockets": [
+      {
+        "symbol": "STAR-B.ST",
+        "name": "Starbreeze B",
+        "position": 1,
+        "morning_price": 0.09,
+        "evening_price": 0.09,
+        "change_percent": 0.0,
+        "status": "FLAT",
+        "recommendation": "BEHÅLL"
+      },
+      {
+        "symbol": "NIBE-B.ST",
+        "name": "NIBE Industrier B",
+        "position": 2,
+        "morning_price": 40.09,
+        "evening_price": 39.13,
+        "change_percent": -2.39,
+        "status": "STOP_LOSS",
+        "recommendation": "SÄLJ - STOPLOSS"
+      }
+    ],
+    "summary": {
+      "total_picks": 2,
+      "winners": 1,
+      "losers": 1,
+      "total_return_percent": -2.39,
+      "avg_return_percent": -1.2
+    }
+  }
+]
