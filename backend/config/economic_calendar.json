@@ -1,0 +1,124 @@
+{
+  "events": [
+    {
+      "id": "fomc-2026-01",
+      "date": "2026-01-28",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut januari 2026",
+      "impact": "high"
+    },
+    {
+      "id": "fomc-2026-03",
+      "date": "2026-03-18",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut mars 2026",
+      "impact": "high"
+    },
+    {
+      "id": "fomc-2026-05",
+      "date": "2026-05-06",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut maj 2026",
+      "impact": "high"
+    },
+    {
+      "id": "fomc-2026-06",
+      "date": "2026-06-17",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut juni 2026",
+      "impact": "high"
+    },
+    {
+      "id": "fomc-2026-07",
+      "date": "2026-07-29",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut juli 2026",
+      "impact": "high"
+    },
+    {
+      "id": "fomc-2026-09",
+      "date": "2026-09-16",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut september 2026",
+      "impact": "high"
+    },
+    {
+      "id": "fomc-2026-11",
+      "date": "2026-11-04",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut november 2026",
+      "impact": "high"
+    },
+    {
+      "id": "fomc-2026-12",
+      "date": "2026-12-16",
+      "time": "19:00",
+      "title": "Fed FOMC räntebesked",
+      "category": "rate_decision",
+      "source": "Federal Reserve",
+      "description": "FOMC räntebeslut december 2026",
+      "impact": "high"
+    },
+    {
+      "id": "earnings-q4-2025",
+      "date": "2026-01-20",
+      "time": null,
+      "title": "Rapportsäsong Q4 2025 startar",
+      "category": "earnings_season",
+      "source": "Manuell",
+      "description": "Amerikanska storbolag börjar rapportera Q4-resultat",
+      "impact": "medium"
+    },
+    {
+      "id": "earnings-q1-2026",
+      "date": "2026-04-14",
+      "time": null,
+      "title": "Rapportsäsong Q1 2026 startar",
+      "category": "earnings_season",
+      "source": "Manuell",
+      "description": "Amerikanska storbolag börjar rapportera Q1-resultat",
+      "impact": "medium"
+    },
+    {
+      "id": "earnings-q2-2026",
+      "date": "2026-07-14",
+      "time": null,
+      "title": "Rapportsäsong Q2 2026 startar",
+      "category": "earnings_season",
+      "source": "Manuell",
+      "description": "Amerikanska storbolag börjar rapportera Q2-resultat",
+      "impact": "medium"
+    },
+    {
+      "id": "earnings-q3-2026",
+      "date": "2026-10-13",
+      "time": null,
+      "title": "Rapportsäsong Q3 2026 startar",
+      "category": "earnings_season",
+      "source": "Manuell",
+      "description": "Amerikanska storbolag börjar rapportera Q3-resultat",
+      "impact": "medium"
+    }
+  ]
+}

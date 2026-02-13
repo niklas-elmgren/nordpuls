@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Rocket,
   Calculator,
+  Thermometer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/rockets", label: "Raket-historik", icon: Rocket },
   { href: "/rockets/simulator", label: "Simulator", icon: Calculator },
   { href: "/congress", label: "Kongresshandel", icon: Landmark },
+  { href: "/klimat", label: "Aktieklimat", icon: Thermometer },
 ];
 
 export function Sidebar() {

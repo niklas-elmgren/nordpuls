@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Ensure backend directory is in path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from routers import stocks, news, congress, briefings
+from routers import stocks, news, congress, briefings, climate
 from services.scheduler import setup_scheduler, shutdown_scheduler
 
 
@@ -61,6 +61,7 @@ app.include_router(stocks.router, prefix="/api/stocks", tags=["Aktier"])
 app.include_router(news.router, prefix="/api/news", tags=["Nyheter"])
 app.include_router(congress.router, prefix="/api/congress", tags=["Kongresshandel"])
 app.include_router(briefings.router, prefix="/api/briefings", tags=["Briefingar"])
+app.include_router(climate.router, prefix="/api/climate", tags=["Aktieklimat"])
 
 
 @app.get("/")
